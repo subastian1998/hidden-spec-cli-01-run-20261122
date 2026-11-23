@@ -1,10 +1,22 @@
 // mend: one patch tool for every AI edit format (SPEC.md version 1).
 // Node 22, the standard library alone; run as `node main.ts [options] [PATCH]`.
 //
-// Reads a patch in one of four formats (unified diff, SEARCH/REPLACE blocks,
-// V4A, JSON edits), finds the lines each edit names at the first of three
-// matching tiers, and writes every change or none, printing what it changed
-// or why it failed. Sections 1-10 of SPEC.md.
+// Reads a patch in one of four formats and applies it all-or-nothing:
+//   unified diffs      -- `diff --git` / `---`+`+++` sections with @@ hunks
+//                         (a hunk's -A line is a hint, not gospel: the match
+//                         is found by content at the nearest occurrence);
+//   SEARCH/REPLACE     -- `<<<<<<< SEARCH` ... `=======` ... `>>>>>>> REPLACE`
+//                         blocks, the file named on the line above each block;
+//   V4A                -- `*** Begin Patch` with Add/Delete/Update File
+//                         sections and @@ anchors;
+//   JSON edits         -- one JSON object per line, or a JSON array:
+//                         create / str_replace / insert by path.
+// Every edit is found at the first of three matching tiers (exact, trailing
+// whitespace ignored, leading+trailing whitespace ignored with re-indent),
+// and either all edits land or none do: a failed edit rolls the tree back
+// and is reported instead of half-applying. Sections 1-10 of SPEC.md.
+//
+// Exit codes: 0 ok, 1 an edit failed, 2 usage / parse / no patch.
 //
 // In a trial the grader runs `node /bot/main.ts` with MAKEFUN_ENV_URL set, and
 // then this file hands over to runner.ts (the last lines below): keep that
